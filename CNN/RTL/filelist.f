@@ -1,0 +1,2 @@
+-f $RTL_PATH/SRAM/filelist.f
+-f $RTL_PATH/CNN_TOP/filelist.f
