@@ -28,7 +28,7 @@ module tb ();
 
   always #1 i_clk = ~i_clk;
 
-  adder_read #(
+  cnn_top #(
      .IMAGE_HEIGHT   (IMAGE_HEIGHT  ), 
      .IMAGE_WIDTH    (IMAGE_WIDTH   ), 
      .PIXEL_WIDTH    (DATA_WIDTH    ),
@@ -37,7 +37,7 @@ module tb ();
      .NUM_ROWS       (NUM_ROWS      ),  
      .NUM_COLS       (NUM_COLS      ), 
      .WINDOW         (WINDOW        )  
-  ) u_adder_read 
+  ) u_cnn_top 
   (
     .i_clk           (i_clk       ),
     .i_reset_n       (i_reset_n   ),

@@ -138,10 +138,10 @@ endtask
                     coladdr = c >> 2;
                     addr    = (r * 64) + coladdr;      // {row[7:0],col[5:0]}
                     case (bank)
-                        0: u_adder_read.u_sram_bank_top.banks[0].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
-                        1: u_adder_read.u_sram_bank_top.banks[1].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
-                        2: u_adder_read.u_sram_bank_top.banks[2].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
-                        3: u_adder_read.u_sram_bank_top.banks[3].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
+                        0: u_cnn_top.u_sram_bank_top.banks[0].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
+                        1: u_cnn_top.u_sram_bank_top.banks[1].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
+                        2: u_cnn_top.u_sram_bank_top.banks[2].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
+                        3: u_cnn_top.u_sram_bank_top.banks[3].u_sram_matrix_array.mem_matrix[addr[13:6]][addr[5:0]] = exp_pix(r[7:0], c[7:0]);
                     endcase
                 end
             end

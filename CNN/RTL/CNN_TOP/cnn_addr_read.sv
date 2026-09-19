@@ -1,4 +1,4 @@
-module adder_read #(
+module cnn_addr_read #(
   parameter int IMAGE_HEIGHT    = 256,
   parameter int IMAGE_WIDTH     = 256,
   parameter int PIXEL_WIDTH     = 8,
@@ -43,7 +43,8 @@ module adder_read #(
   reg   [NUM_BANKS-1:0]             r_bank_sel;
   reg   [NUM_BANKS-1:0]             r_bank_sel_dly;
   reg   [NUM_BANKS+WINDOW-1-1:0]    r_bank_sel_dly_frame;
-  reg [PIXEL_WIDTH-1:0]             r_pixel[WINDOW-1:0]; 
+  reg   [PIXEL_WIDTH-1:0]           r_pixel[WINDOW-1:0]; 
+  reg                               r_valid;
 
   wire                        w_run;
   wire                        w_start;
@@ -52,6 +53,7 @@ module adder_read #(
   assign w_run    = (r_state_reg == RUN );
   assign w_start  = (r_state_reg == IDLE ) & i_start;
   assign o_pixel  = r_pixel;
+  assign o_valid  = r_valid;
 
   assign r_bank_sel_dly_frame = {r_bank_sel_dly[0+:WINDOW-1],r_bank_sel_dly};
 
@@ -63,6 +65,18 @@ module adder_read #(
      assign w_wen [bank_i]   = !r_bank_sel[bank_i];
    end
   endgenerate
+
+
+  always_ff @(posedge i_clk or negedge i_reset_n) begin
+    if(!i_reset_n) begin
+      r_valid   <= 1'b0; 
+    end else if(w_run) begin
+      r_valid   <= 1'b1; 
+    end else begin
+      r_valid   <= 1'b0; 
+    end
+  end
+
   
 
   integer bank_idx;
