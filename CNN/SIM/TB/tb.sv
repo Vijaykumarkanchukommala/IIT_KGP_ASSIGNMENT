@@ -56,7 +56,7 @@ module tb ();
 `ifdef SHM_DUMP 
    initial begin
        $shm_open("waves.shm");  // Creates the SHM database file
-       $shm_probe("tb");        // Probes signals ("AS" means All ports and Static/ports/signals)
+       $shm_probe(tb,"A");        // Probes signals ("AS" means All ports and Static/ports/signals)
    end
 `endif
 endmodule
