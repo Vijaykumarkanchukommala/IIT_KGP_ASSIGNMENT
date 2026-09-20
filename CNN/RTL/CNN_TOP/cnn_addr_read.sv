@@ -19,7 +19,8 @@ module cnn_addr_read #(
     output                        o_wen [NUM_BANKS-1:0],
     output                        o_cen [NUM_BANKS-1:0],
     output [PIXEL_WIDTH  -1:0]    i_dout[NUM_BANKS-1:0], 
-    output [PIXEL_WIDTH  -1:0]    o_din [NUM_BANKS-1:0]  
+    output [PIXEL_WIDTH  -1:0]    o_din [NUM_BANKS-1:0],  
+    output                        o_busy
 );
 
   localparam  STATE_REG_WIDTH = 2;
@@ -57,6 +58,7 @@ module cnn_addr_read #(
   assign w_start  = (r_state_reg == IDLE ) & i_start;
   assign o_pixel  = r_pixel;
   assign o_valid  = r_valid;
+  assign o_busy   = (r_state_reg != IDLE ) | i_start;
 
   assign r_bank_sel_dly_frame = {r_bank_sel_dly[0+:WINDOW-1],r_bank_sel_dly};
 

@@ -1,4 +1,4 @@
-module mac_core #(
+module mac #(
   parameter SAMPLE_WIDTH = 8, 
   parameter NUM_SAMPLES  = 8, 
   parameter OUTPUT_WIDTH = 2*SAMPLE_WIDTH+$clog2(NUM_SAMPLES),
@@ -7,9 +7,7 @@ module mac_core #(
 (
    input   signed   [SAMPLE_WIDTH - 1:0]     i_A            [NUM_SAMPLES-1:0], 
    input   signed   [SAMPLE_WIDTH - 1:0]     i_B            [NUM_SAMPLES-1:0],
-   input                                     i_load                          ,
-   output  signed   [OUTPUT_WIDTH - 1:0]     o_output                        , 
-   output                                    o_output_valid            
+   output  signed   [OUTPUT_WIDTH - 1:0]     o_output                          
 );
 
   localparam NUM_MULTIPLIERS  = NUM_SAMPLES;
@@ -22,8 +20,6 @@ module mac_core #(
 
   wire  signed [MULT_RESULT_SAMPLE_WIDTH-1:0] w_multiplier_result[NUM_SAMPLES-1:0];
 
-
-  assign o_output_valid = i_load;
 
   //Multiplier
   generate for(mult_i = 0; mult_i < NUM_MULTIPLIERS; mult_i = mult_i + 1) begin :gen_multiplier
