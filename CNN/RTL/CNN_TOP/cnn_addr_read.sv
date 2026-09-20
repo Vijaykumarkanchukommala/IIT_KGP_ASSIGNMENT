@@ -14,7 +14,12 @@ module cnn_addr_read #(
     input                         i_start,
     output                        o_valid,
     output                        o_done,
-    output [PIXEL_WIDTH-1:0]      o_pixel[WINDOW-1:0] 
+    output [PIXEL_WIDTH-1:0]      o_pixel[WINDOW-1:0], 
+    output [ADDRESS_WIDTH-1:0]    o_addr[NUM_BANKS-1:0],
+    output                        o_wen [NUM_BANKS-1:0],
+    output                        o_cen [NUM_BANKS-1:0],
+    output [PIXEL_WIDTH  -1:0]    i_dout[NUM_BANKS-1:0], 
+    output [PIXEL_WIDTH  -1:0]    o_din [NUM_BANKS-1:0]  
 );
 
   localparam  STATE_REG_WIDTH = 2;
@@ -32,10 +37,8 @@ module cnn_addr_read #(
   wire                              w_cen      [NUM_BANKS-1:0]; 
   wire                              w_wen      [NUM_BANKS-1:0]; 
   wire  [ADDRESS_WIDTH-1:0]         w_addr     [NUM_BANKS-1:0]; 
-  wire  [PIXEL_WIDTH  -1:0]         w_din      [NUM_BANKS-1:0]; 
-  wire  [PIXEL_WIDTH  -1:0]         w_dout     [NUM_BANKS-1:0]; 
   reg   [COLS_ADDRESS_WIDTH-1:0]    r_col_addr [NUM_BANKS-1:0]; 
-  reg   [ROWS_ADDRESS_WIDTH-1:0]    r_row_addr [NUM_BANKS-1:0]; 
+  reg   [ROWS_ADDRESS_WIDTH-1:0]    r_row_addr                ; 
 
   reg   [STATE_REG_WIDTH-1:0]       r_state_next;   
   reg   [STATE_REG_WIDTH-1:0]       r_state_reg;   
@@ -60,11 +63,15 @@ module cnn_addr_read #(
   genvar bank_i;
   generate
    for(bank_i = 0; bank_i < NUM_BANKS; bank_i = bank_i + 1) begin
-     assign w_addr[bank_i]   = {r_row_addr[bank_i],r_col_addr[bank_i]};
+     assign w_addr[bank_i]   = {r_row_addr,r_col_addr[bank_i]};
      assign w_cen [bank_i]   = r_bank_sel[bank_i];
      assign w_wen [bank_i]   = !r_bank_sel[bank_i];
    end
   endgenerate
+
+  assign o_addr = w_addr;
+  assign o_wen  = w_wen;
+  assign o_cen  = w_cen;
 
 
   always_ff @(posedge i_clk or negedge i_reset_n) begin
@@ -76,7 +83,6 @@ module cnn_addr_read #(
       r_valid   <= 1'b0; 
     end
   end
-
   
 
   integer bank_idx;
@@ -86,7 +92,7 @@ module cnn_addr_read #(
       r_bank_sel   <= {NUM_BANKS{1'b1}}; 
     end else if(w_start) begin
       r_bank_sel   <= {{NUM_BANKS-WINDOW{1'b1}},{WINDOW{1'b0}}}; 
-    end else if(w_run) begin
+    end else if(w_run & (r_row_addr == NUM_ROWS-1)) begin
         r_bank_sel   <= (r_bank_sel<<1) | (r_bank_sel>>(NUM_BANKS-1)); 
     end
   end
@@ -105,7 +111,7 @@ module cnn_addr_read #(
       r_scan_cnt   <= {SCAN_CNT_WIDTH{1'b0}}; 
     end else if(w_start) begin
       r_scan_cnt   <= {SCAN_CNT_WIDTH{1'b0}}; 
-    end else if(w_run) begin
+    end else if(w_run & (r_row_addr == NUM_ROWS-1)) begin
       if(r_scan_cnt == LAST_SCAN_CNT-1) 
         r_scan_cnt   <= {SCAN_CNT_WIDTH{1'b0}}; 
       else
@@ -122,9 +128,9 @@ module cnn_addr_read #(
       for(bank_idx = 0; bank_idx < NUM_BANKS; bank_idx = bank_idx + 1) begin
          r_col_addr[bank_idx]  <= {COLS_ADDRESS_WIDTH{1'b0}};
       end
-    end else if(w_run) begin
+    end else if(w_run & (r_row_addr == NUM_ROWS-1)) begin
       if(!r_bank_sel[NUM_BANKS-1] & r_bank_sel[0]) begin
-         r_col_addr[bank_idx]  <= COLS_ADDRESS_WIDTH'(r_col_addr[bank_idx][COLS_ADDRESS_WIDTH-1:0]+1);
+         r_col_addr[bank_idx]  <= (r_col_addr[bank_idx][COLS_ADDRESS_WIDTH-1:0]+1'd1);
          for(bank_idx = 1; bank_idx < NUM_BANKS; bank_idx = bank_idx + 1) begin
            r_col_addr[bank_idx]  <= (r_col_addr[bank_idx-1][COLS_ADDRESS_WIDTH-1:0]);
          end
@@ -139,17 +145,14 @@ module cnn_addr_read #(
 
   always_ff @(posedge i_clk or negedge i_reset_n) begin
     if(!i_reset_n) begin
-      for(bank_idx = 0; bank_idx < NUM_BANKS; bank_idx = bank_idx + 1) begin
-         r_row_addr[bank_idx]  <= {ROWS_ADDRESS_WIDTH{1'b0}};
-      end
+         r_row_addr  <= {ROWS_ADDRESS_WIDTH{1'b0}};
     end else if(w_start) begin
-      for(bank_idx = 0; bank_idx < NUM_BANKS; bank_idx = bank_idx + 1) begin
-         r_row_addr[bank_idx]  <= {ROWS_ADDRESS_WIDTH{1'b0}};
-      end
+         r_row_addr  <= {ROWS_ADDRESS_WIDTH{1'b0}};
     end else if(w_run) begin
-      for(bank_idx = 0; bank_idx < NUM_BANKS; bank_idx = bank_idx + 1) begin
-         r_row_addr[bank_idx]  <= {ROWS_ADDRESS_WIDTH{1'b0}};
-      end
+         if(r_row_addr == NUM_ROWS-1)
+            r_row_addr  <= {ROWS_ADDRESS_WIDTH{1'b0}};
+         else
+            r_row_addr  <= r_row_addr + 1'd1;
     end
   end
 
@@ -170,7 +173,7 @@ module cnn_addr_read #(
                 r_state_next = RUN;
             end
       RUN : begin
-                if(r_scan_cnt == LAST_SCAN_CNT-1)
+                if(r_scan_cnt == LAST_SCAN_CNT-1 & (r_row_addr == NUM_ROWS-1))
                    r_state_next = WAIT;
             end
       WAIT : begin
@@ -185,34 +188,18 @@ module cnn_addr_read #(
     endcase
   end
 
-  sram_bank_top
-  #(
-    .DATA_WIDTH    (PIXEL_WIDTH  ),  
-    .NUM_BANKS     (NUM_BANKS    ), 
-    .ADDRESS_WIDTH (ADDRESS_WIDTH),  
-    .NUM_ROWS      (NUM_ROWS     ), 
-    .NUM_COLS      (NUM_COLS     )  
-  ) u_sram_bank_top
-  (
-    .i_clk        (i_clk ),
-    .i_cen        (w_cen ),
-    .i_wen        (w_wen ),
-    .i_addr       (w_addr), 
-    .i_din        (w_din ), 
-    .o_dout       (w_dout)  
-  );
 
   integer wdx,bdx;
   integer idx;
   always_comb begin
     for(wdx = 0; wdx < WINDOW; wdx = wdx+1) begin 
-       r_pixel[wdx] = w_dout[wdx];
+       r_pixel[wdx] = i_dout[wdx];
     end
     for(bdx = 0; bdx < NUM_BANKS; bdx = bdx+1) begin 
       if(~|r_bank_sel_dly_frame[bdx+:WINDOW]) 
         for(wdx = 0; wdx < WINDOW; wdx = wdx+1) begin 
            idx = (wdx + bdx)%NUM_BANKS;
-           r_pixel[wdx] = w_dout[idx];
+           r_pixel[wdx] = i_dout[idx];
         end
     end
   end

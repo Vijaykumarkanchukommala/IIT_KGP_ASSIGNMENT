@@ -18,6 +18,12 @@ module cnn_top #(
 );
 
 
+  wire [ADDRESS_WIDTH-1:0]    w_addr[NUM_BANKS-1:0];
+  wire                        w_wen [NUM_BANKS-1:0];
+  wire                        w_cen [NUM_BANKS-1:0];
+  wire [PIXEL_WIDTH  -1:0]    w_dout[NUM_BANKS-1:0]; 
+  wire [PIXEL_WIDTH  -1:0]    w_din [NUM_BANKS-1:0]; 
+
   cnn_addr_read 
   #(
      .IMAGE_HEIGHT (IMAGE_HEIGHT ), 
@@ -35,8 +41,32 @@ module cnn_top #(
       .i_start      (i_start  ),
       .o_valid      (o_valid  ),
       .o_done       (o_done   ),
-      .o_pixel      (o_pixel  ) 
+      .o_pixel      (o_pixel  ),
+      .o_din        (w_din    ), 
+      .o_addr       (w_addr   ), 
+      .o_wen        (w_wen    ), 
+      .o_cen        (w_cen    ), 
+      .i_dout       (w_dout   )  
    );
+
+
+  sram_bank_top
+  #(
+    .DATA_WIDTH    (PIXEL_WIDTH  ),  
+    .NUM_BANKS     (NUM_BANKS    ), 
+    .ADDRESS_WIDTH (ADDRESS_WIDTH),  
+    .NUM_ROWS      (NUM_ROWS     ), 
+    .NUM_COLS      (NUM_COLS     )  
+  ) u_sram_bank_top
+  (
+    .i_clk        (i_clk ),
+    .i_cen        (w_cen ),
+    .i_wen        (w_wen ),
+    .i_addr       (w_addr), 
+    .i_din        (w_din ), 
+    .o_dout       (w_dout)  
+  );
+
 
 
 
