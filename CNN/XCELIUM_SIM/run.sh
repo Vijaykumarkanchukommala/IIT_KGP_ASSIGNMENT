@@ -1,5 +1,10 @@
-#!/bin/bin/csh -f
-source setup.sh
+#!/bin/csh
+# ^-- Adding this line tells the system to use C-Shell instead of Bash
+
+setenv RTL_PATH   "../RTL"
+
+echo $RTL_PATH
+
 # Define names for your files and directories
 set FILELIST = "filelist.f"
 set LOG_DIR  = "sim_logs"
@@ -11,8 +16,7 @@ if ( ! -d $LOG_DIR ) then
 endif
 
 # Define your compiler macros/defines here
-# Add as many +define+VAR as you need, separated by spaces
-set DEFINES = "+define+SIMULATION +define+DEBUG_ON"
+set DEFINES = "+define+SIMULATION +define+DEBUG_ON +define+SHM_DUMP"
 
 echo "========================================"
 echo " Starting Xcelium Simulation (Csh)... "
@@ -20,8 +24,6 @@ echo " Log file: ${LOG_FILE}"
 echo "========================================"
 
 # Run the 64-bit simulation
-# -l: Redirects all terminal output to the specified log file
-# -clean: Ensures a fresh build by clearing old snapshots
 xrun -64 \
      -clean \
      -f ${FILELIST} \
@@ -29,8 +31,4 @@ xrun -64 \
      ${DEFINES} \
      -access +rwc \
      -timescale 1ns/1ps
-
-echo "========================================"
-echo " Simulation Finished! Check ${LOG_FILE} "
-echo "========================================"
 
